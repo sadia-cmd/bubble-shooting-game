@@ -1,0 +1,1630 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bubble Shooter</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f9f2e6;
+      --muted: #bcb3a4;
+      --panel: #211f1c;
+      --panel-2: #2b2924;
+      --line: rgba(249, 242, 230, 0.16);
+      --aqua: #60d8c2;
+      --coral: #ff6f68;
+      --gold: #ffc857;
+      --violet: #9381ff;
+      --green: #79d45e;
+      --shadow: rgba(0, 0, 0, 0.34);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      min-height: 100svh;
+      background:
+        linear-gradient(135deg, rgba(96, 216, 194, 0.12), transparent 34%),
+        linear-gradient(315deg, rgba(255, 111, 104, 0.12), transparent 38%),
+        #151411;
+      color: var(--ink);
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+    }
+
+    .app {
+      width: min(1180px, 100%);
+      height: 100svh;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) auto auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      position: relative;
+      width: 46px;
+      height: 46px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 34% 28%, #fff9d9 0 9%, transparent 10%),
+        radial-gradient(circle at 64% 70%, rgba(0, 0, 0, 0.18) 0 20%, transparent 21%),
+        linear-gradient(135deg, var(--coral), var(--gold) 48%, var(--aqua));
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.26);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 1.4rem;
+      line-height: 1.05;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      letter-spacing: 0;
+    }
+
+    .stats {
+      display: flex;
+      align-items: stretch;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .stat {
+      min-width: 86px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(33, 31, 28, 0.82);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      line-height: 1;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 1.08rem;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .icon-button,
+    .primary-button,
+    .secondary-button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(33, 31, 28, 0.88);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+      cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .icon-button {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+
+    .icon-button svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .icon-button:hover,
+    .primary-button:hover,
+    .secondary-button:hover {
+      transform: translateY(-1px);
+      border-color: rgba(96, 216, 194, 0.55);
+      background: rgba(43, 41, 36, 0.95);
+    }
+
+    .icon-button:focus-visible,
+    .primary-button:focus-visible,
+    .secondary-button:focus-visible {
+      outline: 2px solid var(--aqua);
+      outline-offset: 3px;
+    }
+
+    .game-layout {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 242px;
+      gap: 14px;
+    }
+
+    .play-area {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    #gameCanvas {
+      width: min(100%, calc((100svh - 128px) * 0.837));
+      height: auto;
+      max-height: calc(100svh - 128px);
+      aspect-ratio: 820 / 980;
+      border-radius: 8px;
+      border: 1px solid rgba(249, 242, 230, 0.18);
+      background: #181722;
+      box-shadow: 0 22px 50px var(--shadow);
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .side-panel {
+      min-width: 0;
+      display: grid;
+      align-content: start;
+      gap: 12px;
+    }
+
+    .panel-block {
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(33, 31, 28, 0.84);
+      box-shadow: 0 16px 34px rgba(0, 0, 0, 0.18);
+    }
+
+    .panel-label {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .meter {
+      display: grid;
+      gap: 8px;
+    }
+
+    .meter-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .meter-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.09);
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--aqua), var(--gold), var(--coral));
+      transition: width 180ms ease;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .mini-stat {
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(249, 242, 230, 0.07);
+      border: 1px solid rgba(249, 242, 230, 0.1);
+      min-width: 0;
+    }
+
+    .mini-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    .mini-stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      pointer-events: none;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      width: min(360px, 86%);
+      padding: 24px;
+      border-radius: 8px;
+      border: 1px solid rgba(249, 242, 230, 0.2);
+      background: rgba(21, 20, 17, 0.88);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
+      text-align: center;
+      pointer-events: auto;
+      backdrop-filter: blur(12px);
+    }
+
+    .modal h2 {
+      margin: 0;
+      font-size: 1.7rem;
+      letter-spacing: 0;
+    }
+
+    .modal p {
+      margin: 10px 0 18px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .primary-button,
+    .secondary-button {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 16px;
+      white-space: nowrap;
+    }
+
+    .primary-button {
+      color: #12100e;
+      border-color: transparent;
+      background: linear-gradient(135deg, var(--gold), var(--aqua));
+      font-weight: 700;
+    }
+
+    .primary-button:hover {
+      background: linear-gradient(135deg, #ffd66f, #7ee3d0);
+    }
+
+    .secondary-button svg,
+    .primary-button svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.1;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    @media (max-width: 940px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        height: auto;
+        min-height: 100svh;
+      }
+
+      .topbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .stats {
+        grid-column: 1 / -1;
+        justify-content: stretch;
+      }
+
+      .stat {
+        flex: 1 1 0;
+      }
+
+      .game-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      #gameCanvas {
+        width: min(100%, 560px);
+        max-height: none;
+      }
+
+      .side-panel {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 620px) {
+      .app {
+        padding: 10px;
+        gap: 10px;
+      }
+
+      .brand h1 {
+        font-size: 1.14rem;
+      }
+
+      .brand p {
+        display: none;
+      }
+
+      .brand-mark {
+        width: 38px;
+        height: 38px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stat {
+        min-width: 0;
+        padding: 8px;
+      }
+
+      .stat strong {
+        font-size: 1rem;
+      }
+
+      .side-panel {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .panel-block {
+        padding: 12px;
+      }
+
+      .modal {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand" aria-label="Bubble Shooter">
+        <div class="brand-mark" aria-hidden="true"></div>
+        <div>
+          <h1>Bubble Shooter</h1>
+          <p>Arcade mode</p>
+        </div>
+      </div>
+
+      <div class="stats" aria-live="polite">
+        <div class="stat"><span>Score</span><strong id="scoreValue">0</strong></div>
+        <div class="stat"><span>Level</span><strong id="levelValue">1</strong></div>
+        <div class="stat"><span>Shots</span><strong id="shotsValue">0</strong></div>
+        <div class="stat"><span>Best</span><strong id="bestValue">0</strong></div>
+      </div>
+
+      <div class="actions">
+        <button class="icon-button" id="pauseButton" type="button" aria-label="Pause" title="Pause">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"></path></svg>
+        </button>
+        <button class="icon-button" id="restartButton" type="button" aria-label="Restart" title="Restart">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.35-5.65"></path><path d="M4 4v6h6"></path></svg>
+        </button>
+        <button class="icon-button" id="soundButton" type="button" aria-label="Sound on" title="Sound">
+          <svg id="soundIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10v4h4l5 4V6l-5 4H4z"></path><path d="M16 9.5a4 4 0 0 1 0 5"></path><path d="M18.5 7a7 7 0 0 1 0 10"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="game-layout">
+      <section class="play-area" aria-label="Game board">
+        <canvas id="gameCanvas" width="820" height="980"></canvas>
+        <div class="overlay" id="overlay">
+          <div class="modal">
+            <h2 id="overlayTitle">Bubble Shooter</h2>
+            <p id="overlayText">Line up the color clusters and clear the board.</p>
+            <div class="modal-actions">
+              <button class="primary-button" id="primaryButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7-11-7z"></path></svg>
+                <span id="primaryButtonText">Play</span>
+              </button>
+              <button class="secondary-button" id="overlayRestartButton" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.35-5.65"></path><path d="M4 4v6h6"></path></svg>
+                Restart
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side-panel" aria-label="Game status">
+        <section class="panel-block meter">
+          <p class="panel-label">Row Drop</p>
+          <div class="meter-top">
+            <span id="meterLabel">0 / 6</span>
+            <span id="dangerLabel">Safe</span>
+          </div>
+          <div class="meter-track" aria-hidden="true"><div class="meter-fill" id="meterFill"></div></div>
+        </section>
+
+        <section class="panel-block">
+          <p class="panel-label">Run</p>
+          <div class="mini-grid">
+            <div class="mini-stat"><span>Combo</span><strong id="comboValue">0</strong></div>
+            <div class="mini-stat"><span>Popped</span><strong id="poppedValue">0</strong></div>
+            <div class="mini-stat"><span>Dropped</span><strong id="droppedValue">0</strong></div>
+            <div class="mini-stat"><span>Rows</span><strong id="rowsValue">0</strong></div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const ui = {
+        score: document.getElementById("scoreValue"),
+        level: document.getElementById("levelValue"),
+        shots: document.getElementById("shotsValue"),
+        best: document.getElementById("bestValue"),
+        combo: document.getElementById("comboValue"),
+        popped: document.getElementById("poppedValue"),
+        dropped: document.getElementById("droppedValue"),
+        rows: document.getElementById("rowsValue"),
+        meterLabel: document.getElementById("meterLabel"),
+        dangerLabel: document.getElementById("dangerLabel"),
+        meterFill: document.getElementById("meterFill"),
+        overlay: document.getElementById("overlay"),
+        overlayTitle: document.getElementById("overlayTitle"),
+        overlayText: document.getElementById("overlayText"),
+        primaryButton: document.getElementById("primaryButton"),
+        primaryButtonText: document.getElementById("primaryButtonText"),
+        pauseButton: document.getElementById("pauseButton"),
+        restartButton: document.getElementById("restartButton"),
+        overlayRestartButton: document.getElementById("overlayRestartButton"),
+        soundButton: document.getElementById("soundButton"),
+        soundIcon: document.getElementById("soundIcon")
+      };
+
+      const W = canvas.width;
+      const H = canvas.height;
+      const R = 23;
+      const D = R * 2;
+      const ROW_GAP = R * Math.sqrt(3);
+      const COLS = 14;
+      const TOP = 46;
+      const WALL_LEFT = 34;
+      const WALL_RIGHT = W - 34;
+      const SHOOTER_X = W / 2;
+      const SHOOTER_Y = H - 118;
+      const DANGER_Y = SHOOTER_Y - 126;
+      const SHOT_SPEED = 2300;
+      const SHOT_STEP = 1 / 360;
+      const SHOT_START_DISTANCE = 82;
+      const AIM_MIN = -Math.PI + 0.12;
+      const AIM_MAX = -0.12;
+      const AIM_KEY_STEP = 0.09;
+      const MAX_ROWS = Math.floor((DANGER_Y - TOP - R) / ROW_GAP);
+
+      const COLORS = [
+        { name: "Coral", base: "#ff6f68", dark: "#a93a37", light: "#ffd3c8" },
+        { name: "Aqua", base: "#60d8c2", dark: "#197b73", light: "#d4fff6" },
+        { name: "Gold", base: "#ffc857", dark: "#a26216", light: "#fff0b9" },
+        { name: "Violet", base: "#9381ff", dark: "#5745b8", light: "#eee8ff" },
+        { name: "Leaf", base: "#79d45e", dark: "#397c2b", light: "#e7ffd4" },
+        { name: "Sky", base: "#62b5ff", dark: "#235fa3", light: "#d9f0ff" },
+        { name: "Rose", base: "#ff7fb1", dark: "#ad3d68", light: "#ffe0ee" }
+      ];
+
+      const state = {
+        status: "ready",
+        level: 1,
+        score: 0,
+        best: readBest(),
+        shots: 0,
+        combo: 0,
+        popped: 0,
+        dropped: 0,
+        rowMeter: 0,
+        activeColors: COLORS.slice(0, 5),
+        currentColor: COLORS[0],
+        aimAngle: -Math.PI / 2,
+        pointer: { x: SHOOTER_X, y: SHOOTER_Y - 220 },
+        shake: 0,
+        messageTimer: 0,
+        sound: true
+      };
+
+      let board = [];
+      let shot = null;
+      let effects = [];
+      let lastTime = performance.now();
+      let aiming = false;
+      let audioContext = null;
+      let levelTimer = 0;
+
+      function readBest() {
+        try {
+          return Number(localStorage.getItem("bubble-shooter-best") || 0);
+        } catch (_) {
+          return 0;
+        }
+      }
+
+      function writeBest(value) {
+        try {
+          localStorage.setItem("bubble-shooter-best", String(value));
+        } catch (_) {
+          // Local storage can be unavailable for file URLs in some browser modes.
+        }
+      }
+
+      function colorCountForLevel(level) {
+        return Math.min(5 + Math.floor((level - 1) / 2), COLORS.length);
+      }
+
+      function rowsForLevel(level) {
+        return Math.min(7 + Math.floor(level / 2), 11);
+      }
+
+      function dropLimit() {
+        return Math.max(3, 5 - Math.floor((state.level - 1) / 2));
+      }
+
+      function makeRow(density) {
+        return Array.from({ length: COLS }, () => {
+          if (Math.random() > density) return null;
+          return { color: pickFrom(state.activeColors), settle: 0 };
+        });
+      }
+
+      function startNewGame() {
+        state.status = "playing";
+        state.level = 1;
+        state.score = 0;
+        state.shots = 0;
+        state.combo = 0;
+        state.popped = 0;
+        state.dropped = 0;
+        state.rowMeter = 0;
+        state.aimAngle = -Math.PI / 2;
+        state.pointer = { x: SHOOTER_X, y: SHOOTER_Y - 220 };
+        state.shake = 0;
+        shot = null;
+        effects = [];
+        buildLevel();
+        refreshOverlay();
+        updateUI();
+      }
+
+      function buildLevel() {
+        state.activeColors = COLORS.slice(0, colorCountForLevel(state.level));
+        const rows = rowsForLevel(state.level);
+        board = [];
+        for (let r = 0; r < rows; r += 1) {
+          const density = r < 3 ? 1 : 0.86;
+          board.push(makeRow(density));
+        }
+        state.currentColor = pickPlayableColor();
+        state.rowMeter = 0;
+        levelTimer = 0;
+      }
+
+      function pickFrom(items) {
+        return items[Math.floor(Math.random() * items.length)];
+      }
+
+      function boardColors() {
+        const seen = new Set();
+        const list = [];
+        forEachBubble((bubble) => {
+          if (!seen.has(bubble.color.name)) {
+            seen.add(bubble.color.name);
+            list.push(bubble.color);
+          }
+        });
+        return list;
+      }
+
+      function pickPlayableColor() {
+        const onBoard = boardColors();
+        if (onBoard.length && Math.random() < 0.86) return pickFrom(onBoard);
+        return pickFrom(state.activeColors);
+      }
+
+      function gridToPixel(row, col) {
+        const boardWidth = COLS * D + R;
+        const left = (W - boardWidth) / 2;
+        return {
+          x: left + R + col * D + (row % 2) * R,
+          y: TOP + R + row * ROW_GAP
+        };
+      }
+
+      function validCol(col) {
+        return col >= 0 && col < COLS;
+      }
+
+      function validCell(row, col) {
+        return row >= 0 && row <= MAX_ROWS + 2 && validCol(col);
+      }
+
+      function ensureRow(row) {
+        while (board.length <= row) board.push(Array(COLS).fill(null));
+        if (!board[row]) board[row] = Array(COLS).fill(null);
+      }
+
+      function getCell(row, col) {
+        if (!validCell(row, col) || !board[row]) return null;
+        return board[row][col] || null;
+      }
+
+      function setCell(row, col, bubble) {
+        ensureRow(row);
+        board[row][col] = bubble;
+      }
+
+      function neighbors(row, col) {
+        const stagger = row % 2;
+        const candidates = [
+          [row, col - 1],
+          [row, col + 1],
+          [row - 1, col + (stagger ? 0 : -1)],
+          [row - 1, col + (stagger ? 1 : 0)],
+          [row + 1, col + (stagger ? 0 : -1)],
+          [row + 1, col + (stagger ? 1 : 0)]
+        ];
+        return candidates.filter(([r, c]) => validCell(r, c));
+      }
+
+      function forEachBubble(callback) {
+        for (let r = 0; r < board.length; r += 1) {
+          const row = board[r];
+          if (!row) continue;
+          for (let c = 0; c < COLS; c += 1) {
+            const bubble = row[c];
+            if (bubble) callback(bubble, r, c);
+          }
+        }
+      }
+
+      function occupiedRows() {
+        let count = 0;
+        for (let r = 0; r < board.length; r += 1) {
+          if (board[r] && board[r].some(Boolean)) count += 1;
+        }
+        return count;
+      }
+
+      function trimBoard() {
+        while (board.length && !board[board.length - 1].some(Boolean)) {
+          board.pop();
+        }
+      }
+
+      function updateAimFromPoint(point) {
+        const dx = point.x - SHOOTER_X;
+        const dy = point.y - SHOOTER_Y;
+        let angle = Math.atan2(dy, dx);
+        if (angle > 0) angle = dx < 0 ? AIM_MIN : AIM_MAX;
+        state.aimAngle = Math.max(AIM_MIN, Math.min(AIM_MAX, angle));
+        state.pointer = point;
+      }
+
+      function canvasPoint(event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: ((event.clientX - rect.left) / rect.width) * W,
+          y: ((event.clientY - rect.top) / rect.height) * H
+        };
+      }
+
+      function shootBubble() {
+        if (state.status === "ready") {
+          startNewGame();
+          return;
+        }
+        if (state.status !== "playing" || shot) return;
+
+        const color = state.currentColor;
+        const angle = state.aimAngle;
+        shot = {
+          x: SHOOTER_X + Math.cos(angle) * SHOT_START_DISTANCE,
+          y: SHOOTER_Y + Math.sin(angle) * SHOT_START_DISTANCE,
+          vx: Math.cos(angle) * SHOT_SPEED,
+          vy: Math.sin(angle) * SHOT_SPEED,
+          color
+        };
+        state.currentColor = pickPlayableColor();
+        state.shots += 1;
+        playSound("shoot");
+        updateUI();
+      }
+
+      function updateShot(dt) {
+        if (!shot) return;
+        let remaining = dt;
+        while (shot && remaining > 0) {
+          const step = Math.min(SHOT_STEP, remaining);
+          moveShot(step);
+          remaining -= step;
+        }
+      }
+
+      function moveShot(dt) {
+        shot.x += shot.vx * dt;
+        shot.y += shot.vy * dt;
+
+        if (shot.x - R <= WALL_LEFT) {
+          shot.x = WALL_LEFT + R;
+          shot.vx = Math.abs(shot.vx);
+          playSound("wall");
+        } else if (shot.x + R >= WALL_RIGHT) {
+          shot.x = WALL_RIGHT - R;
+          shot.vx = -Math.abs(shot.vx);
+          playSound("wall");
+        }
+
+        if (shot.y <= TOP + R) {
+          attachShot(findNearestOpenCell(shot.x, TOP + R, 0, 2));
+          return;
+        }
+
+        let hit = null;
+        let best = Infinity;
+        forEachBubble((bubble, row, col) => {
+          const p = gridToPixel(row, col);
+          const dx = shot.x - p.x;
+          const dy = shot.y - p.y;
+          const dist = dx * dx + dy * dy;
+          const threshold = (R * 2 - 2) * (R * 2 - 2);
+          if (dist <= threshold && dist < best) {
+            best = dist;
+            hit = { row, col };
+          }
+        });
+
+        if (hit) {
+          const cell = nearestNeighborCell(hit.row, hit.col, shot.x, shot.y);
+          attachShot(cell);
+        }
+      }
+
+      function nearestNeighborCell(row, col, x, y) {
+        const candidates = neighbors(row, col)
+          .filter(([r, c]) => !getCell(r, c))
+          .map(([r, c]) => ({ row: r, col: c, point: gridToPixel(r, c) }));
+
+        if (!candidates.length) {
+          return findNearestOpenCell(x, y, Math.max(0, row - 2), Math.min(MAX_ROWS + 2, row + 2));
+        }
+
+        candidates.sort((a, b) => {
+          const da = distanceSq(a.point.x, a.point.y, x, y);
+          const db = distanceSq(b.point.x, b.point.y, x, y);
+          return da - db;
+        });
+        return { row: candidates[0].row, col: candidates[0].col };
+      }
+
+      function findNearestOpenCell(x, y, rowMin, rowMax) {
+        const candidates = [];
+        for (let r = rowMin; r <= rowMax; r += 1) {
+          for (let c = 0; c < COLS; c += 1) {
+            if (!getCell(r, c)) {
+              const p = gridToPixel(r, c);
+              candidates.push({ row: r, col: c, score: distanceSq(p.x, p.y, x, y) });
+            }
+          }
+        }
+        if (!candidates.length) return null;
+        candidates.sort((a, b) => a.score - b.score);
+        return { row: candidates[0].row, col: candidates[0].col };
+      }
+
+      function distanceSq(ax, ay, bx, by) {
+        const dx = ax - bx;
+        const dy = ay - by;
+        return dx * dx + dy * dy;
+      }
+
+      function attachShot(cell) {
+        if (!shot || !cell || cell.row > MAX_ROWS + 2) {
+          gameOver();
+          return;
+        }
+
+        setCell(cell.row, cell.col, { color: shot.color, settle: 1 });
+        const attached = { row: cell.row, col: cell.col, color: shot.color };
+        shot = null;
+        playSound("attach");
+        resolveBoard(attached);
+        trimBoard();
+        checkDanger();
+        updateUI();
+      }
+
+      function resolveBoard(attached) {
+        const cluster = findCluster(attached.row, attached.col, attached.color.name);
+        if (cluster.length >= 3) {
+          let scoreGain = cluster.length * (24 + state.combo * 6);
+          cluster.forEach(({ row, col }) => {
+            const bubble = getCell(row, col);
+            if (!bubble) return;
+            const p = gridToPixel(row, col);
+            addPopEffect(p.x, p.y, bubble.color);
+            setCell(row, col, null);
+          });
+
+          const floaters = findFloaters();
+          floaters.forEach(({ row, col }) => {
+            const bubble = getCell(row, col);
+            if (!bubble) return;
+            const p = gridToPixel(row, col);
+            addFallEffect(p.x, p.y, bubble.color);
+            setCell(row, col, null);
+          });
+
+          state.combo += 1;
+          state.popped += cluster.length;
+          state.dropped += floaters.length;
+          scoreGain += floaters.length * (34 + state.combo * 4);
+          state.score += scoreGain;
+          state.rowMeter = 0;
+          state.shake = Math.min(10, state.shake + cluster.length * 0.45 + floaters.length * 0.25);
+          playSound(floaters.length ? "drop" : "pop");
+
+          if (isBoardClear()) {
+            clearLevel();
+          }
+        } else {
+          state.combo = 0;
+          state.rowMeter += 1;
+          if (state.rowMeter >= dropLimit()) {
+            advanceRows();
+            state.rowMeter = 0;
+          } else {
+            playSound("miss");
+          }
+        }
+
+        if (state.score > state.best) {
+          state.best = state.score;
+          writeBest(state.best);
+        }
+      }
+
+      function findCluster(row, col, colorName) {
+        const queue = [{ row, col }];
+        const seen = new Set();
+        const cluster = [];
+
+        while (queue.length) {
+          const cell = queue.shift();
+          const key = `${cell.row},${cell.col}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+
+          const bubble = getCell(cell.row, cell.col);
+          if (!bubble || bubble.color.name !== colorName) continue;
+          cluster.push(cell);
+
+          neighbors(cell.row, cell.col).forEach(([r, c]) => queue.push({ row: r, col: c }));
+        }
+
+        return cluster;
+      }
+
+      function findFloaters() {
+        const queue = [];
+        const anchored = new Set();
+
+        for (let c = 0; c < COLS; c += 1) {
+          if (getCell(0, c)) queue.push({ row: 0, col: c });
+        }
+
+        while (queue.length) {
+          const cell = queue.shift();
+          const key = `${cell.row},${cell.col}`;
+          if (anchored.has(key)) continue;
+          const bubble = getCell(cell.row, cell.col);
+          if (!bubble) continue;
+          anchored.add(key);
+          neighbors(cell.row, cell.col).forEach(([r, c]) => queue.push({ row: r, col: c }));
+        }
+
+        const floaters = [];
+        forEachBubble((_bubble, row, col) => {
+          const key = `${row},${col}`;
+          if (!anchored.has(key)) floaters.push({ row, col });
+        });
+        return floaters;
+      }
+
+      function isBoardClear() {
+        let any = false;
+        forEachBubble(() => {
+          any = true;
+        });
+        return !any;
+      }
+
+      function clearLevel() {
+        state.score += 500 + state.level * 120;
+        state.level += 1;
+        state.status = "transition";
+        levelTimer = 1.3;
+        state.rowMeter = 0;
+        playSound("level");
+        refreshOverlay("Level Clear", "New round is loading.", "Continue");
+      }
+
+      function advanceRows() {
+        board.unshift(makeRow(0.92));
+        state.shake = 12;
+        playSound("row");
+        checkDanger();
+      }
+
+      function checkDanger() {
+        if (state.status === "gameover") return;
+        let danger = false;
+        forEachBubble((_bubble, row, col) => {
+          const p = gridToPixel(row, col);
+          if (p.y + R >= DANGER_Y) danger = true;
+        });
+        if (danger) gameOver();
+      }
+
+      function gameOver() {
+        state.status = "gameover";
+        shot = null;
+        state.combo = 0;
+        if (state.score > state.best) {
+          state.best = state.score;
+          writeBest(state.best);
+        }
+        playSound("gameover");
+        refreshOverlay("Game Over", `Score ${state.score.toLocaleString()}`, "Play Again");
+        updateUI();
+      }
+
+      function togglePause() {
+        if (state.status === "ready") {
+          startNewGame();
+          return;
+        }
+        if (state.status === "playing") {
+          state.status = "paused";
+          refreshOverlay("Paused", "The board is waiting.", "Resume");
+        } else if (state.status === "paused") {
+          state.status = "playing";
+          refreshOverlay();
+        }
+        updateUI();
+      }
+
+      function refreshOverlay(title, text, button) {
+        if (state.status === "playing") {
+          ui.overlay.classList.add("hidden");
+          ui.pauseButton.setAttribute("aria-label", "Pause");
+          ui.pauseButton.title = "Pause";
+          ui.pauseButton.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"></path></svg>';
+          return;
+        }
+
+        ui.overlay.classList.remove("hidden");
+
+        const copy = {
+          ready: ["Bubble Shooter", "Line up the color clusters and clear the board.", "Play"],
+          paused: ["Paused", "The board is waiting.", "Resume"],
+          transition: ["Level Clear", "New round is loading.", "Continue"],
+          gameover: ["Game Over", `Score ${state.score.toLocaleString()}`, "Play Again"]
+        }[state.status] || ["Bubble Shooter", "", "Play"];
+
+        ui.overlayTitle.textContent = title || copy[0];
+        ui.overlayText.textContent = text || copy[1];
+        ui.primaryButtonText.textContent = button || copy[2];
+
+        const isPaused = state.status === "paused";
+        ui.pauseButton.setAttribute("aria-label", isPaused ? "Resume" : "Pause");
+        ui.pauseButton.title = isPaused ? "Resume" : "Pause";
+        ui.pauseButton.innerHTML = isPaused
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7-11-7z"></path></svg>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"></path></svg>';
+      }
+
+      function addPopEffect(x, y, color) {
+        effects.push({ type: "ring", x, y, color, life: 0.32, max: 0.32, radius: R });
+        for (let i = 0; i < 9; i += 1) {
+          const angle = (Math.PI * 2 * i) / 9 + Math.random() * 0.28;
+          const speed = 86 + Math.random() * 130;
+          effects.push({
+            type: "spark",
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            color,
+            life: 0.42 + Math.random() * 0.16,
+            max: 0.55,
+            size: 3 + Math.random() * 4
+          });
+        }
+      }
+
+      function addFallEffect(x, y, color) {
+        effects.push({
+          type: "fall",
+          x,
+          y,
+          vx: (Math.random() - 0.5) * 110,
+          vy: 70 + Math.random() * 80,
+          color,
+          life: 1.2,
+          max: 1.2,
+          spin: (Math.random() - 0.5) * 8,
+          rotation: 0
+        });
+      }
+
+      function updateEffects(dt) {
+        effects.forEach((effect) => {
+          effect.life -= dt;
+          if (effect.type === "spark") {
+            effect.x += effect.vx * dt;
+            effect.y += effect.vy * dt;
+            effect.vy += 250 * dt;
+          } else if (effect.type === "fall") {
+            effect.x += effect.vx * dt;
+            effect.y += effect.vy * dt;
+            effect.vy += 560 * dt;
+            effect.rotation += effect.spin * dt;
+          }
+        });
+        effects = effects.filter((effect) => effect.life > 0 && effect.y < H + 80);
+      }
+
+      function update(dt) {
+        if (state.shake > 0) state.shake = Math.max(0, state.shake - dt * 28);
+
+        if (state.status === "transition") {
+          levelTimer -= dt;
+          if (levelTimer <= 0) {
+            buildLevel();
+            state.status = "playing";
+            refreshOverlay();
+          }
+        }
+
+        if (state.status === "playing") {
+          updateShot(dt);
+          forEachBubble((bubble) => {
+            if (bubble.settle) bubble.settle = Math.max(0, bubble.settle - dt * 4);
+          });
+        }
+
+        updateEffects(dt);
+      }
+
+      function render() {
+        ctx.save();
+        ctx.clearRect(0, 0, W, H);
+
+        const shakeX = state.shake ? (Math.random() - 0.5) * state.shake : 0;
+        const shakeY = state.shake ? (Math.random() - 0.5) * state.shake : 0;
+        ctx.translate(shakeX, shakeY);
+
+        drawBackdrop();
+        drawAim();
+        drawBoard();
+        drawShot();
+        drawEffects();
+        drawShooter();
+        ctx.restore();
+      }
+
+      function drawBackdrop() {
+        const bg = ctx.createLinearGradient(0, 0, 0, H);
+        bg.addColorStop(0, "#262139");
+        bg.addColorStop(0.52, "#181820");
+        bg.addColorStop(1, "#11100e");
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.save();
+        ctx.globalAlpha = 0.22;
+        ctx.strokeStyle = "rgba(255,255,255,0.14)";
+        ctx.lineWidth = 1;
+        for (let x = 70; x < W; x += 70) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x - 140, H);
+          ctx.stroke();
+        }
+        for (let y = 80; y < H; y += 84) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(W, y);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.fillStyle = "rgba(255,255,255,0.04)";
+        roundedRect(WALL_LEFT - 18, TOP - 20, WALL_RIGHT - WALL_LEFT + 36, DANGER_Y - TOP + 62, 8);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,0.18)";
+        ctx.lineWidth = 2;
+        roundedRect(WALL_LEFT - 18, TOP - 20, WALL_RIGHT - WALL_LEFT + 36, DANGER_Y - TOP + 62, 8);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.setLineDash([12, 12]);
+        ctx.strokeStyle = "rgba(255, 111, 104, 0.66)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(WALL_LEFT - 4, DANGER_Y);
+        ctx.lineTo(WALL_RIGHT + 4, DANGER_Y);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle = "rgba(255, 111, 104, 0.13)";
+        ctx.fillRect(WALL_LEFT - 18, DANGER_Y, WALL_RIGHT - WALL_LEFT + 36, 5);
+      }
+
+      function roundedRect(x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+      }
+
+      function drawBoard() {
+        forEachBubble((bubble, row, col) => {
+          const p = gridToPixel(row, col);
+          const scale = bubble.settle ? 1 + Math.sin((1 - bubble.settle) * Math.PI) * 0.18 : 1;
+          drawBubble(p.x, p.y, bubble.color, R * scale);
+        });
+      }
+
+      function drawShot() {
+        if (!shot) return;
+
+        const speed = Math.hypot(shot.vx, shot.vy) || 1;
+        const vx = shot.vx / speed;
+        const vy = shot.vy / speed;
+        const tail = 86;
+
+        ctx.save();
+        ctx.lineCap = "round";
+        ctx.lineWidth = R * 1.1;
+        const streak = ctx.createLinearGradient(
+          shot.x - vx * tail,
+          shot.y - vy * tail,
+          shot.x,
+          shot.y
+        );
+        streak.addColorStop(0, "rgba(255,255,255,0)");
+        streak.addColorStop(0.38, `${shot.color.base}55`);
+        streak.addColorStop(1, `${shot.color.light}aa`);
+        ctx.strokeStyle = streak;
+        ctx.beginPath();
+        ctx.moveTo(shot.x - vx * tail, shot.y - vy * tail);
+        ctx.lineTo(shot.x, shot.y);
+        ctx.stroke();
+        ctx.restore();
+
+        drawBubble(shot.x, shot.y, shot.color, R);
+      }
+
+      function drawAim() {
+        if (state.status !== "playing" || shot) return;
+        const points = traceAim();
+
+        ctx.save();
+        for (let i = 0; i < points.length; i += 1) {
+          const point = points[i];
+          const alpha = Math.max(0.12, 0.55 - i * 0.018);
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = i % 2 ? state.currentColor.light : state.currentColor.base;
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, Math.max(2.2, 5 - i * 0.05), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function traceAim() {
+        const points = [];
+        let vx = Math.cos(state.aimAngle);
+        const vy = Math.sin(state.aimAngle);
+        let x = SHOOTER_X + vx * SHOT_START_DISTANCE;
+        let y = SHOOTER_Y + vy * SHOT_START_DISTANCE;
+        const step = 12;
+        let traveled = 0;
+
+        for (let i = 0; i < 170; i += 1) {
+          x += vx * step;
+          y += vy * step;
+          traveled += step;
+
+          if (x - R <= WALL_LEFT) {
+            x = WALL_LEFT + R;
+            vx = Math.abs(vx);
+          } else if (x + R >= WALL_RIGHT) {
+            x = WALL_RIGHT - R;
+            vx = -Math.abs(vx);
+          }
+
+          if (traveled > 24 && i % 3 === 0) points.push({ x, y });
+          if (y <= TOP + R) break;
+
+          let blocked = false;
+          forEachBubble((_bubble, row, col) => {
+            if (blocked) return;
+            const p = gridToPixel(row, col);
+            if (distanceSq(x, y, p.x, p.y) <= (R * 2 - 3) * (R * 2 - 3)) blocked = true;
+          });
+          if (blocked) break;
+        }
+        return points;
+      }
+
+      function drawShooter() {
+        ctx.save();
+        ctx.translate(SHOOTER_X, SHOOTER_Y);
+
+        ctx.save();
+        ctx.rotate(state.aimAngle + Math.PI / 2);
+        const barrel = ctx.createLinearGradient(-17, -120, 17, 18);
+        barrel.addColorStop(0, "rgba(249,242,230,0.98)");
+        barrel.addColorStop(0.48, "rgba(96,216,194,0.65)");
+        barrel.addColorStop(1, "rgba(27,26,22,0.92)");
+        ctx.fillStyle = barrel;
+        roundedRectLocal(-17, -118, 34, 114, 12);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.26)";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(17,16,14,0.72)";
+        ctx.beginPath();
+        ctx.arc(0, -116, 23, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = state.currentColor.light;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+
+        const base = ctx.createLinearGradient(0, -54, 0, 48);
+        base.addColorStop(0, "#4a473e");
+        base.addColorStop(1, "#171512");
+        ctx.fillStyle = base;
+        ctx.beginPath();
+        ctx.arc(0, -8, 72, Math.PI, 0);
+        ctx.lineTo(82, 40);
+        ctx.lineTo(-82, 40);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.16)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(0,0,0,0.34)";
+        ctx.beginPath();
+        ctx.arc(0, -62, R + 15, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = state.currentColor.light;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        drawBubble(0, -62, state.currentColor, R + 9);
+        drawShooterLabel("LOADED", 0, -112, state.currentColor);
+
+        ctx.restore();
+      }
+
+      function drawShooterLabel(text, x, y, color) {
+        ctx.save();
+        ctx.font = "700 13px Segoe UI, Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const width = ctx.measureText(text).width + 18;
+        ctx.fillStyle = "rgba(17,16,14,0.78)";
+        roundedRectLocal(x - width / 2, y - 11, width, 22, 8);
+        ctx.fill();
+        ctx.strokeStyle = color.base;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.fillStyle = "#fff7e8";
+        ctx.fillText(text, x, y + 0.5);
+        ctx.restore();
+      }
+
+      function roundedRectLocal(x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+      }
+
+      function drawBubble(x, y, color, radius) {
+        ctx.save();
+        ctx.translate(x, y);
+
+        const shadow = ctx.createRadialGradient(radius * 0.18, radius * 0.25, radius * 0.2, 0, 0, radius);
+        shadow.addColorStop(0, color.light);
+        shadow.addColorStop(0.38, color.base);
+        shadow.addColorStop(1, color.dark);
+        ctx.fillStyle = shadow;
+        ctx.beginPath();
+        ctx.arc(0, 0, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,0.42)";
+        ctx.lineWidth = Math.max(1, radius * 0.08);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(255,255,255,0.78)";
+        ctx.beginPath();
+        ctx.ellipse(-radius * 0.34, -radius * 0.38, radius * 0.22, radius * 0.13, -0.58, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(0,0,0,0.11)";
+        ctx.beginPath();
+        ctx.arc(radius * 0.34, radius * 0.38, radius * 0.23, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+
+      function drawEffects() {
+        effects.forEach((effect) => {
+          const progress = 1 - effect.life / effect.max;
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, effect.life / effect.max);
+          if (effect.type === "ring") {
+            ctx.strokeStyle = effect.color.light;
+            ctx.lineWidth = 4 * (1 - progress);
+            ctx.beginPath();
+            ctx.arc(effect.x, effect.y, effect.radius + progress * 20, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (effect.type === "spark") {
+            ctx.fillStyle = effect.color.light;
+            ctx.beginPath();
+            ctx.arc(effect.x, effect.y, effect.size * (1 - progress * 0.45), 0, Math.PI * 2);
+            ctx.fill();
+          } else if (effect.type === "fall") {
+            ctx.translate(effect.x, effect.y);
+            ctx.rotate(effect.rotation);
+            drawBubble(0, 0, effect.color, R * 0.92);
+          }
+          ctx.restore();
+        });
+      }
+
+      function updateUI() {
+        ui.score.textContent = state.score.toLocaleString();
+        ui.level.textContent = state.level.toString();
+        ui.shots.textContent = state.shots.toString();
+        ui.best.textContent = state.best.toLocaleString();
+        ui.combo.textContent = state.combo.toString();
+        ui.popped.textContent = state.popped.toString();
+        ui.dropped.textContent = state.dropped.toString();
+        ui.rows.textContent = occupiedRows().toString();
+        ui.meterLabel.textContent = `${state.rowMeter} / ${dropLimit()}`;
+        ui.meterFill.style.width = `${Math.min(100, (state.rowMeter / dropLimit()) * 100)}%`;
+        ui.dangerLabel.textContent = state.rowMeter >= dropLimit() - 1 ? "Close" : "Safe";
+        ui.soundButton.setAttribute("aria-label", state.sound ? "Sound on" : "Sound off");
+        ui.soundIcon.innerHTML = state.sound
+          ? '<path d="M4 10v4h4l5 4V6l-5 4H4z"></path><path d="M16 9.5a4 4 0 0 1 0 5"></path><path d="M18.5 7a7 7 0 0 1 0 10"></path>'
+          : '<path d="M4 10v4h4l5 4V6l-5 4H4z"></path><path d="M19 9l-6 6"></path><path d="M13 9l6 6"></path>';
+        refreshOverlay();
+      }
+
+      function ensureAudio() {
+        if (audioContext || !state.sound) return;
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtor) return;
+        audioContext = new AudioCtor();
+      }
+
+      function playSound(type) {
+        if (!state.sound) return;
+        ensureAudio();
+        if (!audioContext) return;
+
+        const now = audioContext.currentTime;
+        const gain = audioContext.createGain();
+        const osc = audioContext.createOscillator();
+        const table = {
+          shoot: [320, 0.045, "triangle", 0.05],
+          attach: [190, 0.035, "sine", 0.04],
+          wall: [260, 0.025, "sine", 0.025],
+          miss: [130, 0.055, "sawtooth", 0.035],
+          row: [92, 0.13, "sawtooth", 0.04],
+          pop: [620, 0.11, "triangle", 0.06],
+          drop: [460, 0.16, "triangle", 0.07],
+          level: [720, 0.22, "sine", 0.075],
+          gameover: [86, 0.28, "sawtooth", 0.05]
+        };
+        const [freq, duration, wave, volume] = table[type] || table.attach;
+        osc.type = wave;
+        osc.frequency.setValueAtTime(freq, now);
+        if (type === "pop" || type === "level") {
+          osc.frequency.exponentialRampToValueAtTime(freq * 1.55, now + duration);
+        } else if (type === "gameover") {
+          osc.frequency.exponentialRampToValueAtTime(48, now + duration);
+        }
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(volume, now + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start(now);
+        osc.stop(now + duration + 0.02);
+      }
+
+      function loop(time) {
+        const dt = Math.min(0.033, (time - lastTime) / 1000);
+        lastTime = time;
+        update(dt);
+        render();
+        requestAnimationFrame(loop);
+      }
+
+      canvas.addEventListener("pointerdown", (event) => {
+        canvas.setPointerCapture(event.pointerId);
+        aiming = true;
+        ensureAudio();
+        updateAimFromPoint(canvasPoint(event));
+      });
+
+      canvas.addEventListener("pointermove", (event) => {
+        updateAimFromPoint(canvasPoint(event));
+      });
+
+      canvas.addEventListener("pointerup", (event) => {
+        if (!aiming) return;
+        updateAimFromPoint(canvasPoint(event));
+        aiming = false;
+        shootBubble();
+      });
+
+      canvas.addEventListener("pointercancel", () => {
+        aiming = false;
+      });
+
+      ui.primaryButton.addEventListener("click", () => {
+        ensureAudio();
+        if (state.status === "paused") {
+          state.status = "playing";
+          refreshOverlay();
+        } else if (state.status === "transition") {
+          levelTimer = 0;
+        } else {
+          startNewGame();
+        }
+        updateUI();
+      });
+
+      ui.pauseButton.addEventListener("click", togglePause);
+      ui.restartButton.addEventListener("click", startNewGame);
+      ui.overlayRestartButton.addEventListener("click", startNewGame);
+      ui.soundButton.addEventListener("click", () => {
+        state.sound = !state.sound;
+        if (state.sound) ensureAudio();
+        updateUI();
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === " " || event.key === "Enter") {
+          event.preventDefault();
+          shootBubble();
+        } else if (event.key.toLowerCase() === "p") {
+          togglePause();
+        } else if (event.key.toLowerCase() === "r") {
+          startNewGame();
+        } else if (event.key === "ArrowLeft") {
+          state.aimAngle = Math.max(AIM_MIN, state.aimAngle - AIM_KEY_STEP);
+        } else if (event.key === "ArrowRight") {
+          state.aimAngle = Math.min(AIM_MAX, state.aimAngle + AIM_KEY_STEP);
+        } else if (event.key === "ArrowUp") {
+          state.aimAngle = -Math.PI / 2;
+        }
+      });
+
+      buildLevel();
+      refreshOverlay();
+      updateUI();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
